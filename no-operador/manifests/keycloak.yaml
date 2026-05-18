@@ -1,9 +1,9 @@
-# RHBK Keycloak — plain Deployment (no Operator, no monitoring)
+# RHBK Keycloak — Deployment sin operador, 3 réplicas, stack kubernetes (DNS_PING)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
-  namespace: keycloak
+  namespace: rhbk-kubeping-plain
   labels:
     app: keycloak
 spec:
@@ -23,7 +23,7 @@ spec:
             - start
           env:
             - name: KC_HOSTNAME
-              value: "https://keycloak.apps-crc.testing"
+              value: "https://keycloak-plain.apps-crc.testing"
             - name: KC_HOSTNAME_STRICT
               value: "false"
             - name: KC_HTTP_ENABLED
@@ -57,8 +57,8 @@ spec:
               value: ispn
             - name: KC_CACHE_STACK
               value: kubernetes
-            - name: jgroups.dns.query
-              value: "keycloak-headless.keycloak.svc.cluster.local"
+            - name: JAVA_OPTS_APPEND
+              value: "-Djgroups.dns.query=keycloak-headless.rhbk-kubeping-plain.svc.cluster.local"
           ports:
             - name: http
               containerPort: 8080
@@ -84,7 +84,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: keycloak
-  namespace: keycloak
+  namespace: rhbk-kubeping-plain
 spec:
   selector:
     app: keycloak
@@ -97,7 +97,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: keycloak-headless
-  namespace: keycloak
+  namespace: rhbk-kubeping-plain
 spec:
   clusterIP: None
   selector:
@@ -111,9 +111,9 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: keycloak
-  namespace: keycloak
+  namespace: rhbk-kubeping-plain
 spec:
-  host: keycloak.apps-crc.testing
+  host: keycloak-plain.apps-crc.testing
   to:
     kind: Service
     name: keycloak

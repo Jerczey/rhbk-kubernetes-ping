@@ -1,25 +1,41 @@
 # CRC login
 oc login -u kubeadmin -p <password> https://api.crc.testing:6443 --insecure-skip-tls-verify
 
-# --- no-operador (namespace: keycloak) ---
-oc apply -f no-operador/manifests/namespace.yaml
-oc create secret generic keycloak-db-secret -n keycloak --from-literal=username=testuser --from-literal=password=testpassword --dry-run=client -o yaml | oc apply -f -
-oc create secret generic keycloak-admin-secret -n keycloak --from-literal=password=admin --dry-run=client -o yaml | oc apply -f -
-oc apply -f no-operador/manifests/postgres.yaml
-oc wait --for=condition=ready pod -l app=postgresql-db -n keycloak --timeout=300s
-oc apply -f no-operador/manifests/keycloak.yaml
-oc wait --for=condition=available deployment/keycloak -n keycloak --timeout=900s
-
-# --- operador (namespace: keycloak-op) ---
+# --- operador + Kubernetes Ping (namespace: rhbk-kubeping) ---
 oc apply -f operador/manifests/namespace.yaml
 oc apply -f operador/manifests/operator.yaml
-# Esperar CSV: oc get csv -n keycloak-op
-oc create secret generic keycloak-db-secret -n keycloak-op --from-literal=username=testuser --from-literal=password=testpassword --dry-run=client -o yaml | oc apply -f -
+# Esperar CSV: oc get csv -n rhbk-kubeping -w
+oc create secret generic keycloak-db-secret -n rhbk-kubeping \
+  --from-literal=username=testuser --from-literal=password=testpassword \
+  --dry-run=client -o yaml | oc apply -f -
 oc apply -f operador/manifests/postgres.yaml
-oc wait --for=condition=ready pod -l app=postgresql-db -n keycloak-op --timeout=300s
+oc wait --for=condition=ready pod -l app=postgresql-db -n rhbk-kubeping --timeout=300s
 oc apply -f operador/manifests/keycloak-cr.yaml
 oc apply -f operador/manifests/route.yaml
-# Admin: oc get secret rhbk-kc-initial-admin -n keycloak-op
+# Esperar réplicas: oc get pods -n rhbk-kubeping -l app=keycloak -w
+# Admin: oc get secret rhbk-kc-initial-admin -n rhbk-kubeping -o jsonpath='{.data.password}' | base64 -d; echo
 
-# Hosts (CRC)
-# 127.0.0.1 keycloak.apps-crc.testing keycloak-op.apps-crc.testing
+# Verificar cluster JGroups (logs):
+# oc logs -n rhbk-kubeping rhbk-kc-0 -c keycloak | grep -iE 'cluster|jgroups|view'
+# oc get svc rhbk-kc-discovery -n rhbk-kubeping
+
+# Hosts (CRC):
+# 127.0.0.1 keycloak-kubeping.apps-crc.testing
+# 127.0.0.1 keycloak-plain.apps-crc.testing
+
+# --- sin operador (namespace: rhbk-kubeping-plain) ---
+# oc apply -f no-operador/manifests/namespace.yaml
+# oc create secret generic keycloak-db-secret -n rhbk-kubeping-plain ...
+# oc create secret generic keycloak-admin-secret -n rhbk-kubeping-plain --from-literal=password=admin ...
+# oc apply -f no-operador/manifests/postgres.yaml
+# oc wait --for=condition=ready pod -l app=postgresql-db -n rhbk-kubeping-plain --timeout=300s
+# oc apply -f no-operador/manifests/keycloak.yaml
+# Admin: user admin / password admin
+
+# Documentación: README.md
+
+# Migración kubernetes → jdbc-ping:
+# ./scripts/migrate-kubernetes-to-jdbc-ping.sh both --dry-run
+# ./scripts/migrate-kubernetes-to-jdbc-ping.sh operador
+# ./scripts/migrate-kubernetes-to-jdbc-ping.sh plain --update-manifests
+

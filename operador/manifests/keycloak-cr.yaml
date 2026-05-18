@@ -1,12 +1,12 @@
-# RHBK 26.4 — Keycloak CR managed by rhbk-operator
-# Clustering: cache-stack kubernetes (DNS_PING; operator sets jgroups.dns.query on discovery Service)
+# RHBK 26.4 — HA with Kubernetes DNS_PING (cache-stack kubernetes)
+# Operator creates <name>-discovery headless Service and sets jgroups.dns.query
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: rhbk-kc
-  namespace: keycloak-op
+  namespace: rhbk-kubeping
 spec:
-  instances: 1
+  instances: 3
   resources:
     requests:
       cpu: 500m
@@ -18,6 +18,12 @@ spec:
       value: ispn
     - name: cache-stack
       value: kubernetes
+    - name: jgroups.dns.query
+      value: rhbk-kc-discovery.rhbk-kubeping.svc.cluster.local
+    - name: log-level
+      value: info
+    - name: log-category-org.jgroups
+      value: debug
   db:
     vendor: postgres
     host: postgres-svc
@@ -33,9 +39,13 @@ spec:
   ingress:
     enabled: false
   hostname:
-    hostname: https://keycloak-op.apps-crc.testing
-    admin: https://keycloak-op.apps-crc.testing
+    hostname: https://keycloak-kubeping.apps-crc.testing
+    admin: https://keycloak-kubeping.apps-crc.testing
     strict: false
     backchannelDynamic: true
   proxy:
     headers: xforwarded
+  env:
+    - name: JAVA_OPTS_APPEND
+      value: >-
+        -Djgroups.dns.query=rhbk-kc-discovery.rhbk-kubeping.svc.cluster.local

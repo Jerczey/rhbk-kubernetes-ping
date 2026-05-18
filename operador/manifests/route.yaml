@@ -1,11 +1,11 @@
-# Manual Route (ingress disabled on CR) — edge TLS via OpenShift router
+# Edge TLS via OpenShift router (HTTPS outside, HTTP to pods)
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: rhbk-kc
-  namespace: keycloak-op
+  namespace: rhbk-kubeping
 spec:
-  host: keycloak-op.apps-crc.testing
+  host: keycloak-kubeping.apps-crc.testing
   to:
     kind: Service
     name: rhbk-kc-service
