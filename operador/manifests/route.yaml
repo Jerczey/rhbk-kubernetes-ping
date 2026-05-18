@@ -1,0 +1,17 @@
+# Manual Route (ingress disabled on CR) — edge TLS via OpenShift router
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: rhbk-kc
+  namespace: keycloak-op
+spec:
+  host: keycloak-op.apps-crc.testing
+  to:
+    kind: Service
+    name: rhbk-kc-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

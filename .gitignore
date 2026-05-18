@@ -1,0 +1,12 @@
+# TLS / secrets generados localmente
+*.pem
+*.key
+*.crt
+*.pfx
+rhbk-op-tls/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

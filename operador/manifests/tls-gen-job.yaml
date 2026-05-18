@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tls-gen
+  namespace: keycloak-op
+spec:
+  restartPolicy: Never
+  containers:
+    - name: openssl
+      image: registry.access.redhat.com/ubi9/openssl
+      command:
+        - sh
+        - -c
+        - |
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /tmp/tls.key -out /tmp/tls.crt -days 365 \
+            -subj "/CN=keycloak-op.apps-crc.testing" \
+            -addext "subjectAltName=DNS:keycloak-op.apps-crc.testing,DNS:rhbk-kc-service.keycloak-op.svc.cluster.local,DNS:rhbk-kc-discovery.keycloak-op.svc.cluster.local"
+          sleep 3600

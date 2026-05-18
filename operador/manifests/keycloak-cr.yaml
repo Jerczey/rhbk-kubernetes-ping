@@ -1,0 +1,41 @@
+# RHBK 26.4 — Keycloak CR managed by rhbk-operator
+# Clustering: cache-stack kubernetes (DNS_PING; operator sets jgroups.dns.query on discovery Service)
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: rhbk-kc
+  namespace: keycloak-op
+spec:
+  instances: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 896Mi
+    limits:
+      memory: 1536Mi
+  additionalOptions:
+    - name: cache
+      value: ispn
+    - name: cache-stack
+      value: kubernetes
+  db:
+    vendor: postgres
+    host: postgres-svc
+    database: keycloak
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    httpEnabled: true
+  ingress:
+    enabled: false
+  hostname:
+    hostname: https://keycloak-op.apps-crc.testing
+    admin: https://keycloak-op.apps-crc.testing
+    strict: false
+    backchannelDynamic: true
+  proxy:
+    headers: xforwarded
